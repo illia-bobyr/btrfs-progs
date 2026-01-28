@@ -60,9 +60,39 @@ usage=<percent>, usage=<range>
 
         This filter can only be specified once per block group profile.
 
-devid=<id>
+devid=<id>, devid=!<id>
         Balances only block groups which have at least one chunk on the given
-        device. To list devices with ids use :command:`btrfs filesystem show`.
+        device. Or, if specified as ``!<id>``, no chunks on the given device.
+        To list devices with ids use :command:`btrfs filesystem show`.
+
+        The exclude form (``!<id>``) is useful if a device is added into the file system
+        that uses ``raid1``, ``raid1c3``, ``raid1c4``, or ``raid10`` profiles, and is used
+        for some time without initial rebalance.
+        (``raid5``, and ``raid6`` profiles may require additional work)
+
+        After adding a new device, the :command:`btrfs balance` command can be used to
+        push data there, to make sure that data is evenly balanced with all devices having
+        the same amount of free space.
+
+        .. note::
+                If you add a new disk to an existing RAID1 like file system and do not
+                balance the data, after using it for some time you may end up in a
+                situation when space on all but the new device has been used. And even
+                though the new device still have empty space, the file system would not be
+                able to allocate new chunks, as it needs space on at least two devices. In
+                this case, run a command similar to this:
+
+                .. code-block:: bash
+
+                        # btrfs filesystem show /
+                        # btrfs balance start -f \
+                            -ddevid=!<new-device-id> \
+                            -mdevid=!<new-device-id> \
+                            -sdevid=!<new-device-id> \
+                            /
+
+                ``-f`` is required in order to move system data. If you add two disks to a
+                RAID10 system, any of the new device ids should work.
 
         This filter can only be specified once per block group profile.
 

@@ -149,13 +149,21 @@ static int parse_one_filter(char *context, char *name, char *value,
 			args->flags |= BTRFS_BALANCE_ARGS_USAGE;
 		}
 	} else if (strcmp(name, "devid") == 0) {
-		WARN_IF_DUPLICATE_FILTER(BTRFS_BALANCE_ARGS_DEVID);
+		WARN_IF_DUPLICATE_FILTER(BTRFS_BALANCE_ARGS_DEVID |
+					 BTRFS_BALANCE_ARGS_DEVID_EXCLUDE);
 		REQUIRES_ARGUMENT();
+		if (value && *value == '!') {
+			value++;
+			args->flags &= ~BTRFS_BALANCE_ARGS_DEVID;
+			args->flags |= BTRFS_BALANCE_ARGS_DEVID_EXCLUDE;
+		} else {
+			args->flags &= ~BTRFS_BALANCE_ARGS_DEVID_EXCLUDE;
+			args->flags |= BTRFS_BALANCE_ARGS_DEVID;
+		}
 		if (parse_u64(value, &args->devid) || args->devid == 0) {
 			error("invalid devid argument: %s", value);
 			return 1;
 		}
-		args->flags |= BTRFS_BALANCE_ARGS_DEVID;
 	} else if (strcmp(name, "drange") == 0) {
 		WARN_IF_DUPLICATE_FILTER(BTRFS_BALANCE_ARGS_DRANGE);
 		REQUIRES_ARGUMENT();
